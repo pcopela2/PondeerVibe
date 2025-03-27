@@ -1,3 +1,6 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,28 +10,66 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  USER
+  STORE_OWNER
+  STORE_ASSOCIATE
+  ADMIN
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  firstName     String?
+  lastName      String?
+  role          Role      @default(USER)
+  stores        StoreUser[]
+  orders        Order[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
 model Store {
-  id              String    @id @default(cuid())
+  id              String      @id @default(cuid())
   name            String
-  shopifyDomain   String    @unique
-  stripeAccountId String    @unique
+  shopifyDomain   String      @unique
+  stripeAccountId String      @unique
   location        String
   products        Product[]
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  users           StoreUser[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model StoreUser {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  store     Store    @relation(fields: [storeId], references: [id])
+  storeId   String
+  role      Role     @default(STORE_ASSOCIATE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, storeId])
 }
 
 model Product {
-  id          String      @id @default(cuid())
-  title       String
-  description String?
-  image       String
-  price       Float
-  store       Store       @relation(fields: [storeId], references: [id])
-  storeId     String
-  cartItems   CartItem[]
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id            String    @id @default(cuid())
+  title         String
+  description   String?
+  image         String
+  price         Float
+  store         Store     @relation(fields: [storeId], references: [id])
+  storeId       String
+  shopifyId     String?   // ID from Shopify
+  isVisible     Boolean   @default(true)
+  cartItems     CartItem[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([shopifyId])
 }
 
 model CartItem {
@@ -44,14 +85,15 @@ model CartItem {
 }
 
 model Order {
-  id         String     @id @default(cuid())
-  sessionId  String
+  id         String      @id @default(cuid())
+  user       User        @relation(fields: [userId], references: [id])
+  userId     String
   total      Float
   status     OrderStatus
   splitMetadata Json
   cartItems  CartItem[]
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
 }
 
 enum OrderStatus {
@@ -59,4 +101,5 @@ enum OrderStatus {
   PROCESSING
   COMPLETED
   FAILED
+  RETURNED
 }
