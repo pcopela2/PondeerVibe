@@ -1,12 +1,16 @@
 'use client';
 
 import Image from 'next/image';
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, Plus, Minus } from 'lucide-react';
 import { useState } from 'react';
-import { useCart } from '@/lib/context/CartContext';
-import { ShopifyProduct } from '@/lib/shopify/products';
+import { useCart } from '@/contexts/CartContext';
 
-interface ProductCardProps extends ShopifyProduct {
+interface ProductCardProps {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  image: string;
   storeId: string;
   storeName: string;
 }
@@ -17,11 +21,13 @@ export default function ProductCard({
   description,
   price,
   image,
-  storeName,
   storeId,
+  storeName,
 }: ProductCardProps) {
   const [imageError, setImageError] = useState(false);
-  const { addItem } = useCart();
+  const { addItem, items, updateItemQuantity, removeItem } = useCart();
+
+  const cartItem = items.find(item => item.id === id);
 
   const handleAddToCart = () => {
     addItem({
@@ -30,8 +36,8 @@ export default function ProductCard({
       description,
       price,
       image,
-      storeName,
       storeId,
+      storeName,
     });
   };
 
@@ -64,13 +70,33 @@ export default function ProductCard({
           <span className="text-xl font-bold text-gray-900">
             ${price.toFixed(2)}
           </span>
-          <button
-            onClick={handleAddToCart}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2"
-          >
-            <ShoppingCart className="h-4 w-4" />
-            Add to Cart
-          </button>
+          {cartItem ? (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => updateItemQuantity(id, cartItem.quantity - 1)}
+                className="p-1 hover:bg-gray-100 rounded transition-colors"
+              >
+                <Minus className="h-4 w-4 text-gray-700" />
+              </button>
+              <span className="text-sm text-gray-900 min-w-[20px] text-center">
+                {cartItem.quantity}
+              </span>
+              <button
+                onClick={() => updateItemQuantity(id, cartItem.quantity + 1)}
+                className="p-1 hover:bg-gray-100 rounded transition-colors"
+              >
+                <Plus className="h-4 w-4 text-gray-700" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={handleAddToCart}
+              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2"
+            >
+              <ShoppingCart className="h-4 w-4" />
+              Add to Cart
+            </button>
+          )}
         </div>
       </div>
     </div>
