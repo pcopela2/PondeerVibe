@@ -1,39 +1,24 @@
 import { NextResponse } from 'next/server';
-import { MOCK_STORES } from '@/lib/shopify/client';
-import { MOCK_PRODUCTS } from '@/lib/shopify/products';
+import { mockProducts } from '@/lib/shopify/products';
 
 export async function GET() {
   try {
-    // In production, we would fetch real products from each store
-    // const allProducts = await Promise.all(
-    //   MOCK_STORES.map(async (store) => {
-    //     const products = await fetchStoreProducts(
-    //       store.shopifyDomain,
-    //       process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN!
-    //     );
-    //     return products.map(product => ({
-    //       ...product,
-    //       storeId: store.id,
-    //       storeName: store.name
-    //     }));
-    //   })
-    // );
-
-    // For development, return mock products with store information
-    const mockProductsWithStores = MOCK_PRODUCTS.map((product, index) => ({
+    // In a real application, you would fetch products from your database or Shopify API
+    const products = mockProducts.map(product => ({
       ...product,
-      storeId: MOCK_STORES[index % MOCK_STORES.length].id,
-      storeName: MOCK_STORES[index % MOCK_STORES.length].name,
+      storeId: 'store-1', // Mock store ID
+      storeName: 'Sample Store' // Mock store name
     }));
 
     return NextResponse.json({
-      products: mockProductsWithStores,
+      products,
+      status: 200
     });
   } catch (error) {
     console.error('Error fetching products:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch products' },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      error: 'Failed to fetch products',
+      status: 500
+    });
   }
 }
