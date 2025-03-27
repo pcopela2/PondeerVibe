@@ -12,7 +12,6 @@ interface ProductWithStore extends ShopifyProduct {
 
 export default function Home() {
   const [products, setProducts] = useState<ProductWithStore[]>([]);
-  const [cartItems, setCartItems] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -28,13 +27,9 @@ export default function Home() {
     fetchProducts();
   }, []);
 
-  const handleAddToCart = (productId: string) => {
-    setCartItems((prev) => [...prev, productId]);
-  };
-
   return (
     <main className="min-h-screen bg-gray-50">
-      <Navbar cartItemCount={cartItems.length} />
+      <Navbar />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">
@@ -46,7 +41,6 @@ export default function Home() {
             <ProductCard
               key={product.id}
               {...product}
-              onAddToCart={handleAddToCart}
             />
           ))}
         </div>
