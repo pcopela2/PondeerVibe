@@ -1,0 +1,110 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  USER
+  STORE_OWNER
+  STORE_ASSOCIATE
+  ADMIN
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  firstName     String?
+  lastName      String?
+  role          Role      @default(USER)
+  stores        StoreUser[]
+  orders        Order[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Store {
+  id              String      @id @default(cuid())
+  name            String
+  shopifyDomain   String      @unique
+  stripeAccountId String      @unique
+  location        String
+  products        Product[]
+  users           StoreUser[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model StoreUser {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  store     Store    @relation(fields: [storeId], references: [id])
+  storeId   String
+  role      Role     @default(STORE_ASSOCIATE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, storeId])
+}
+
+model Product {
+  id            String    @id @default(cuid())
+  title         String
+  description   String?
+  image         String
+  price         Float
+  store         Store     @relation(fields: [storeId], references: [id])
+  storeId       String
+  shopifyId     String?   // ID from Shopify
+  isVisible     Boolean   @default(true)
+  cartItems     CartItem[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([shopifyId])
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  sessionId String
+  product   Product  @relation(fields: [productId], references: [id])
+  productId String
+  quantity  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  order     Order?   @relation(fields: [orderId], references: [id])
+  orderId   String?
+}
+
+model Order {
+  id         String      @id @default(cuid())
+  user       User        @relation(fields: [userId], references: [id])
+  userId     String
+  total      Float
+  status     OrderStatus
+  splitMetadata Json
+  cartItems  CartItem[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  RETURNED
+}
