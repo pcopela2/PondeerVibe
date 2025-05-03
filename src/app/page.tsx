@@ -17,10 +17,18 @@ export default function Home() {
     const fetchProducts = async () => {
       try {
         const response = await fetch('/api/products');
+        
+        // Check if the response is JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          throw new Error('Received non-JSON response');
+        }
+
         const data = await response.json();
-        setProducts(data.products);
+        setProducts(Array.isArray(data.products) ? data.products : []);
       } catch (error) {
         console.error('Error fetching products:', error);
+        setProducts([]); // fallback to empty array on error
       }
     };
 

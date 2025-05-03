@@ -1,52 +1,45 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
-
-interface ProductWithStore {
-  id: string;
-  title: string;
-  description: string | null;
-  price: number;
-  image: string;
-  storeId: string;
-  store: {
-    id: string;
-    name: string;
-  };
-}
+import { supabase } from '@/lib/supabase';
 
 export async function GET() {
   try {
-    const products = await prisma.product.findMany({
-      where: {
-        isVisible: true,
-      },
-      include: {
-        store: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
-    });
+    const { data: products, error } = await supabase
+      .from('products')
+      .select('*');
 
-    const formattedProducts = products.map((product: ProductWithStore) => ({
-      id: product.id,
-      title: product.title,
-      description: product.description,
-      price: product.price,
-      image: product.image,
-      storeId: product.storeId,
-      storeName: product.store.name,
-    }));
+    if (error) {
+      throw error;
+    }
 
-    return NextResponse.json({ products: formattedProducts });
+    return NextResponse.json({ products });
   } catch (error) {
     console.error('Error fetching products:', error);
     return NextResponse.json(
       { error: 'Failed to fetch products' },
+      { status: 500 }
+    );
+  }
+}
+
+// Add a POST handler to allow adding new products
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const { title, description, price, image } = body;
+    const { data, error } = await supabase
+      .from('products')
+      .insert([{ title, description, price, image }])
+      .select();
+
+    if (error) {
+      throw error;
+    }
+
+    return NextResponse.json({ product: data?.[0] });
+  } catch (error) {
+    console.error('Error adding product:', error);
+    return NextResponse.json(
+      { error: 'Failed to add product' },
       { status: 500 }
     );
   }
